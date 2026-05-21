@@ -2,6 +2,9 @@
 
 HKUST ISOM 5080 · Group 3
 
+*This repository is a modified fork based on our teammate's original project.*  
+*Original project: [https://github.com/sunstriderLHT/ASADF](https://github.com/sunstriderLHT/ASADF)*
+
 An LLM-powered forensic investigation agent that reconstructs data breach timelines by querying a SQLite evidence database, augmented with a RAG pipeline over MITRE ATT&CK and SANS FOR500 knowledge bases. Built with LangChain, FAISS, and DeepSeek.
 
 ## Architecture
