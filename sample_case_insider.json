@@ -1,0 +1,102 @@
+{
+  "case_name": "Insider Threat — Data Leak by Employee",
+  "description": "内部威胁场景：离职员工在最后工作日通过 USB 复制敏感客户资料，压缩后通过个人网盘上传外泄。",
+  "knowledge_base": {
+    "mitre_attck": "MITRE ATT&CK Threat Intelligence Knowledge Base:\n\n1. Data from Local System (T1005): Adversaries may search local system sources for data of interest before exfiltration. Indicator: bulk file access to customer database or shared drives.\n\n2. Data Compressed (T1560.001): Adversaries may compress data (e.g., with WinRAR or 7-Zip) to reduce size before exfiltration. Indicator: archive tool execution preceding large outbound transfer.\n\n3. Exfiltration Over Web Service (T1567.004): Adversaries may use legitimate web services (e.g., cloud storage, file sharing) to exfiltrate data. Indicator: outbound HTTPS traffic to personal cloud storage from a corporate machine.\n\n4. USB Device Discovery (T1120): Adversaries may check for USB removable media before copying data. Indicator: abnormal volume of file copy operations to removable storage.",
+    "sans_for500": "SANS FOR500 Windows Forensic Analysis Knowledge Base:\n\n1. Evidence of Application Execution (应用程序执行证据):\n- Artifacts: Prefetch, Amcache.hve, Shimcache.\n- Forensic Interpretation: These artifacts prove that a specific executable (e.g., winrar.exe, 7z.exe, cmd.exe) was run on the system with precise timestamps and run counts.\n\n2. Evidence of File and Folder Opening (文件与文件夹访问证据):\n- Artifacts: Shortcut (LNK) Files, ShellBags.\n- Forensic Interpretation: LNK files and ShellBags can prove an employee browsed through customer records and opened specific confidential files before departure.\n\n3. Evidence of Account Usage & Authentication (账户使用与认证证据):\n- Artifacts: Windows Event Logs (Security Log).\n- Forensic Interpretation: Event ID 4688 captures all process creations including archive tools and copy commands. Event ID 4656 (A handle to an object was requested) can track file access attempts on sensitive shares."
+  },
+  "evidence": {
+    "evtx_logs": [
+      {
+        "Source_Log_ID": "EVTX_001",
+        "timestamp": "2026-06-15 16:00:00",
+        "event_id": 4624,
+        "task_category": "Logon",
+        "description": "Employee logon outside regular working hours (4 PM, last working day before resignation).",
+        "user_account": "li.si",
+        "ip_address": "192.168.1.100"
+      },
+      {
+        "Source_Log_ID": "EVTX_002",
+        "timestamp": "2026-06-15 16:15:00",
+        "event_id": 4688,
+        "task_category": "Process Creation",
+        "description": "Process winrar.exe executed with arguments: a -r C:\\Users\\li.si\\Desktop\\customer_backup.rar C:\\SharedDrive\\Customer_DB\\",
+        "user_account": "li.si",
+        "ip_address": "127.0.0.1"
+      },
+      {
+        "Source_Log_ID": "EVTX_003",
+        "timestamp": "2026-06-15 16:20:00",
+        "event_id": 4688,
+        "task_category": "Process Creation",
+        "description": "Process cmd.exe executed with arguments: copy F:\\customer_backup.rar C:\\Users\\li.si\\Desktop\\",
+        "user_account": "li.si",
+        "ip_address": "127.0.0.1"
+      },
+      {
+        "Source_Log_ID": "EVTX_004",
+        "timestamp": "2026-06-15 16:45:00",
+        "event_id": 4688,
+        "task_category": "Process Creation",
+        "description": "Process chrome.exe executed navigating to https://drive.google.com/upload — personal cloud upload detected.",
+        "user_account": "li.si",
+        "ip_address": "127.0.0.1"
+      }
+    ],
+    "prefetch_amcache_logs": [
+      {
+        "Source_Log_ID": "PF_001",
+        "timestamp": "2026-06-15 16:15:00",
+        "program_name": "WINRAR.EXE",
+        "execution_counter": 1,
+        "file_path": "C:\\Program Files\\WinRAR\\WinRAR.exe",
+        "sha1_hash": "B7E34C..."
+      },
+      {
+        "Source_Log_ID": "PF_002",
+        "timestamp": "2026-06-15 16:20:00",
+        "program_name": "CMD.EXE",
+        "execution_counter": 2,
+        "file_path": "C:\\Windows\\System32\\cmd.exe",
+        "sha1_hash": "A1B2C3..."
+      }
+    ],
+    "user_behavior_logs": [
+      {
+        "Source_Log_ID": "GUI_001",
+        "timestamp": "2026-06-15 16:05:00",
+        "artifact_type": "ShellBags",
+        "accessed_path": "C:\\SharedDrive\\Customer_DB\\",
+        "target_file": "",
+        "interaction_type": "Accessed Directory"
+      },
+      {
+        "Source_Log_ID": "GUI_002",
+        "timestamp": "2026-06-15 16:10:00",
+        "artifact_type": "LNK_File",
+        "accessed_path": "C:\\SharedDrive\\Customer_DB\\client_contracts_2026.xlsx",
+        "target_file": "client_contracts_2026.xlsx",
+        "interaction_type": "Opened File"
+      },
+      {
+        "Source_Log_ID": "GUI_003",
+        "timestamp": "2026-06-15 16:22:00",
+        "artifact_type": "ShellBags",
+        "accessed_path": "F:\\",
+        "target_file": "",
+        "interaction_type": "Accessed Removable Drive (USB)"
+      }
+    ],
+    "exfiltration_logs": [
+      {
+        "Source_Log_ID": "EXF_001",
+        "timestamp": "2026-06-15 16:45:00",
+        "source_type": "Network_PCAP",
+        "executed_action": "HTTPS upload to Google Drive — 180 MB of compressed customer data exfiltrated.",
+        "data_size_mb": 180.0,
+        "destination_ip": "142.250.x.x"
+      }
+    ]
+  }
+}

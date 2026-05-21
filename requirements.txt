@@ -1,0 +1,12 @@
+streamlit
+langchain
+langchain-community
+langchain-openai
+langchain-huggingface
+faiss-cpu
+sentence-transformers
+python-dotenv
+# Pin NumPy + scikit-learn together so sentence-transformers/sklearn wheels match
+# (avoids: ValueError numpy.dtype size changed / binary incompatibility)
+numpy>=1.26,<2.4
+scikit-learn>=1.4.0

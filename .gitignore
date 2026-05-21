@@ -1,0 +1,22 @@
+# API keys
+.env
+start_claude.bat
+
+# SQLite database (regenerated via dbBuilder.py)
+*.db
+
+# Generated knowledge bases
+mitre_kb.txt
+sans_kb.txt
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Claude Code
+.claude/
+
+# IDE
+.vscode/
+.idea/
